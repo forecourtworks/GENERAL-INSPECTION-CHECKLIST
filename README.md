@@ -1,21 +1,16 @@
-# Forecourt Works - Field Service Inspection & Metrology App
+# Equipment Calibration & Inspection Portal
 
-A lightweight, web-based field inspection and metrology report generator designed for fuel dispensing units (FDUs), lifting assets, and forecourt infrastructure.
+A lightweight web application designed to capture field inspection, asset calibration parameters, and measurement verification data. Generates formatted PDF export reports directly from the browser.
 
 ## Key Features
-* **Multi-Step Audit Workflow:** Dynamic step navigation with persistent state handling across form steps.
-* **Legal Metrology Metrology Module:** Calculates dispenser meter errors in absolute volume (ml) and percentage (%) in accordance with Kenya Weights & Measures standards.
-* **JSHA Risk Matrix:** 3-column Job Safety and Hazard Analysis table with automatic green/red status highlighting.
-* **15% Opacity Table Layouts:** Professional high-legibility tables with subtle 15% opacity grid borders.
-* **Dynamic Page Budgeting:** Engine automatically tracks vertical page height (`cursorY`) in jsPDF to prevent header orphan errors or text clipping across page breaks.
-* **Responsive Signature Pad:** HTML5 canvas signature capture for lead technicians and client representatives.
+* **Structured Tables:** Part 1 (General Information) and Part 2 (Calibration Measurements) organized in responsive, structured grid layouts.
+* **Flexible Input Engine:** Supports numeric entries alongside plain text entries in measurement fields without breaking execution loops.
+* **Auto-Formatting:** Automatically formats pure numeric inputs to two decimal places (`0.00`) upon field completion.
+* **Rectified Calculations:** Corrected percentage error formula `((Indicated - Standard) / Standard) * 100` and overall dynamic mean calculation.
+* **PDF Export:** Integrated client-side export generating structured tables with auto-calculated values.
 
-## File Structure
-* `index.html` — Application DOM structure, form step cards, inputs, and modal wrappers.
-* `app.js` — State management, metrology calculations, JSHA dynamic rendering, and jsPDF engine.
-* `README.md` — Technical documentation and deployment guidelines.
-
-## Quick Start
-1. Clone or download the repository into your web server directory.
-2. Open `index.html` in any modern web browser (Chrome, Edge, Firefox, Safari). No backend server build required.
-3. Complete the multi-step inspection form and click **Generate Professional PDF Report**.
+## Usage
+1. Open `index.html` in any modern web browser.
+2. Fill out Part 1 (Client, Certificate, and Asset Details).
+3. Record measurements in Part 2. Input values auto-format to 2 decimal places (`0.00`). Text values (e.g., "N/A", "Blocked") are safely retained.
+4. Click **Export PDF** to produce the final PDF inspection report.
