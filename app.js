@@ -11,13 +11,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctx = canvas.getContext("2d");
     let isDrawing = false;
 
-    // Force ALL dynamic and existing text inputs to UPPERCASE automatically
+    // --- 1. CAPS LOCK & INPUT ENFORCEMENT ---
     document.addEventListener("input", (e) => {
         if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") && e.target.type !== "radio" && e.target.type !== "checkbox" && e.target.type !== "date") {
             e.target.value = e.target.value.toUpperCase();
         }
     });
 
+    // --- 2. HELPERS & CALIBRATION TABLE LOGIC ---
     function getSelectedProverSize() {
         const checked = document.querySelector('.prover-radio:checked');
         return checked ? parseFloat(checked.value) : 20.0;
@@ -28,12 +29,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return checked ? checked.value.toUpperCase() : "NEW";
     }
 
-    // Initialize 3 default Nozzle Rows
+    // Initialize default rows
     for (let i = 1; i <= 3; i++) {
         addRow(i);
     }
 
-    // Event Listener for "+ ADD NOZZLE" button
     if (addRowBtn) {
         addRowBtn.addEventListener("click", () => {
             const currentRows = tableBody.children.length;
@@ -146,28 +146,80 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             analysisCell.className = "analysis-cell small text-danger";
             if (diffVol > 0) {
-                // Bolding ONLY the specific gain/loss statement
                 analysisCell.innerHTML = `FAIL — <strong>CUSTOMER LOSING / STATION GAINING</strong>. OVER-REGISTERING BEYOND ALLOWABLE TOLERANCE BY ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ML/L). IMMEDIATE ADJUSTMENT REQUIRED.`;
             } else {
-                // Bolding ONLY the specific gain/loss statement
                 analysisCell.innerHTML = `FAIL — <strong>CUSTOMER GAINING / STATION LOSING</strong>. UNDER-REGISTERING BEYOND ALLOWABLE TOLERANCE BY ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ML/L). SITE IS GIVING AWAY PRODUCT.`;
             }
         }
     }
 
+    // --- 3. TOUCH & MOUSE SIGNATURE CAPTURE (BLACK INK) ---
+    function setupCanvasStyle() {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function startDrawing(e) {
+        e.preventDefault();
+        isDrawing = true;
+        setupCanvasStyle();
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    function stopDrawing(e) {
+        if (isDrawing) {
+            e.preventDefault();
+            isDrawing = false;
+        }
+    }
+
+    // Mouse Listeners
+    canvas.addEventListener("mousedown", startDrawing);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDrawing);
+    canvas.addEventListener("mouseleave", stopDrawing);
+
+    // Touch & Stylus Listeners
+    canvas.addEventListener("touchstart", startDrawing, { passive: false });
+    canvas.addEventListener("touchmove", draw, { passive: false });
+    canvas.addEventListener("touchend", stopDrawing, { passive: false });
+
     window.openSignatureModal = (target) => {
         currentSigTarget = target;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setupCanvasStyle();
         sigModal.show();
     };
 
-    canvas.addEventListener("mousedown", (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
-    canvas.addEventListener("mousemove", (e) => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
-    canvas.addEventListener("mouseup", () => isDrawing = false);
+    document.getElementById("clearSigBtn").addEventListener("click", () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setupCanvasStyle();
+    });
 
-    document.getElementById("clearSigBtn").addEventListener("click", () => ctx.clearRect(0, 0, canvas.width, canvas.height));
     document.getElementById("saveSigBtn").addEventListener("click", () => {
-        const dataUrl = canvas.toDataURL();
+        const dataUrl = canvas.toDataURL("image/png");
         signatures[currentSigTarget] = dataUrl;
         const imgEl = document.getElementById(`${currentSigTarget}SigPreview`);
         imgEl.src = dataUrl;
@@ -175,7 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sigModal.hide();
     });
 
-    // Helper function to force-fetch and convert github repository logo to base64 data URL
+    // --- 4. LOGO FETCHING & PDF GENERATION ---
     async function getLogoBase64() {
         const logoUrl = "https://raw.githubusercontent.com/forecourtworks/FORECOURT-SWL-PNG-LOGO-/main/FSW-SWL%20png.png";
         return new Promise((resolve) => {
@@ -198,11 +250,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     exportPdfBtn.addEventListener("click", async () => {
+        // Enforce Mandatory Signatures
+        if (!signatures.inspector) {
+            alert("INSPECTOR SIGNATURE IS MANDATORY BEFORE GENERATING PDF.");
+            openSignatureModal('inspector');
+            return;
+        }
+        if (!signatures.client) {
+            alert("CLIENT REPRESENTATIVE SIGNATURE IS MANDATORY BEFORE GENERATING PDF.");
+            openSignatureModal('client');
+            return;
+        }
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         const margin = 8;
         const pageWidth = doc.internal.pageSize.getWidth();
 
+        // Header Text
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.text("FORECOURT WORKS LIMITED", margin, 10);
@@ -210,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
         doc.setFont("helvetica", "normal");
         doc.text("RAMCO COURT, GATE 3B, BELLEVUE, NAIROBI | PHONE: +(254) 729 002 087 | EMAIL: SALES@FORECOURTWORKS.CO.KE", margin, 14);
 
-        // Fetch Logo from repository
+        // Embed Logo
         const logoDataUrl = await getLogoBase64();
         if (logoDataUrl) {
             try {
@@ -223,6 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
         doc.setLineWidth(0.4);
         doc.line(margin, 17, pageWidth - margin, 17);
 
+        // Part 1 Data
         const selectedProducts = Array.from(document.querySelectorAll('.prod-check:checked')).map(cb => cb.value).join(", ") || "NONE";
         const part1Data = [
             ["CLIENT NAME", document.getElementById("clientName").value, "CERTIFICATE NO.", document.getElementById("certNo").value],
@@ -242,6 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
             margin: { left: margin, right: margin }
         });
 
+        // Part 2 Data
         const calRows = document.querySelectorAll("#calTableBody tr");
         const part2Data = [];
         calRows.forEach((row, idx) => {
@@ -275,6 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
             margin: { left: margin, right: margin }
         });
 
+        // Part 3 & 4 Data
         const part3_4_Data = [
             ["AMB TEMP (°C)", document.getElementById("ambTemp").value, "PROVER ID", document.getElementById("proverId").value],
             ["PROD TEMP (°C)", document.getElementById("prodTemp").value, "TRACEABILITY CERT", document.getElementById("traceCert").value],
@@ -290,6 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
             margin: { left: margin, right: margin }
         });
 
+        // Part 5 Data
         const part5Data = [
             ["VERDICT", document.getElementById("finalVerdict").value, "NOTES", document.getElementById("techNotes").value],
             ["INSPECTOR", document.getElementById("inspectorName").value, "CLIENT REP", document.getElementById("clientRep").value]
@@ -306,12 +375,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let currentY = doc.lastAutoTable.finalY + 2;
 
-        if (signatures.inspector) {
-            doc.addImage(signatures.inspector, 'PNG', margin + 30, currentY, 22, 8);
-        }
-        if (signatures.client) {
-            doc.addImage(signatures.client, 'PNG', pageWidth - margin - 40, currentY, 22, 8);
-        }
+        // Render Signatures
+        doc.addImage(signatures.inspector, 'PNG', margin + 30, currentY, 22, 8);
+        doc.addImage(signatures.client, 'PNG', pageWidth - margin - 40, currentY, 22, 8);
 
         // PDF Footer Line & Text
         doc.setLineWidth(0.3);
