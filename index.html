@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calibration Certificate - Forecourt Works</title>
+    <title>CALIBRATION CERTIFICATE - FORECOURT WORKS</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body { background-color: #f8f9fa; font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif; font-size: 0.82rem; }
         .card { margin-bottom: 10px; border: 1px solid #ced4da; }
-        .card-header { font-weight: bold; padding: 4px 10px; font-size: 0.82rem; background-color: #f1f3f5; }
-        .table-input { width: 100%; border: 1px solid #ced4da; border-radius: 3px; padding: 2px 4px; font-size: 0.80rem; font-family: inherit; }
+        .card-header { font-weight: bold; padding: 4px 10px; font-size: 0.82rem; background-color: #f1f3f5; text-transform: uppercase; }
+        
+        /* Force ALL inputs, select boxes, and textareas to uppercase visually and structurally */
+        .table-input, input[type="text"], select, textarea { 
+            width: 100%; 
+            border: 1px solid #ced4da; 
+            border-radius: 3px; 
+            padding: 2px 4px; 
+            font-size: 0.80rem; 
+            font-family: inherit; 
+            text-transform: uppercase; 
+        }
+        
+        .table-input::placeholder, input::placeholder {
+            text-transform: uppercase;
+        }
+
         .header-container { background-color: #ffffff; padding: 8px 12px; border-bottom: 2px solid #000; margin-bottom: 10px; }
-        .company-title { font-weight: bold; font-size: 1.05rem; color: #000; }
-        .company-details { font-size: 0.75rem; color: #333; line-height: 1.15; }
-        .footer-note { text-align: center; font-size: 0.72rem; font-style: italic; font-weight: bold; margin-top: 8px; }
+        .company-title { font-weight: bold; font-size: 1.05rem; color: #000; text-transform: uppercase; }
+        .company-details { font-size: 0.75rem; color: #333; line-height: 1.15; text-transform: uppercase; }
+        
+        /* Footer separator line */
+        .footer-line { border-top: 1px solid #000; margin-top: 15px; margin-bottom: 6px; }
+        .footer-note { text-align: center; font-size: 0.72rem; font-style: italic; font-weight: bold; text-transform: uppercase; }
+        
         .signature-preview { height: 30px; max-width: 100px; object-fit: contain; display: none; }
         .verdict-pass { color: #198754; font-weight: bold; }
         .verdict-fail { color: #dc3545; font-weight: bold; }
@@ -27,41 +46,47 @@
         <div class="header-left">
             <div class="company-title">FORECOURT WORKS LIMITED</div>
             <div class="company-details">
-                Ramco Court, Gate 3B, Bellevue, Nairobi<br>
-                Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke
+                RAMCO COURT, GATE 3B, BELLEVUE, NAIROBI<br>
+                PHONE: +(254) 729 002 087 | EMAIL: SALES@FORECOURTWORKS.CO.KE
             </div>
         </div>
         <div class="header-right text-end">
-            <img src="FSW-SWL png.png" id="companyLogo" alt="FORECOURT-SWL Logo" style="max-height: 38px; width: auto;" crossorigin="anonymous">
+            <img src="https://raw.githubusercontent.com/forecourtworks/FORECOURT-SWL-PNG-LOGO-/main/FSW-SWL%20png.png" id="companyLogo" alt="FORECOURT-SWL LOGO" style="max-height: 38px; width: auto;" crossorigin="anonymous">
             <div class="mt-1">
-                <button id="exportPdfBtn" class="btn btn-sm btn-primary fw-bold">Export PDF (1-Page)</button>
+                <button id="exportPdfBtn" class="btn btn-sm btn-primary fw-bold text-uppercase">Export PDF (1-Page)</button>
             </div>
         </div>
     </div>
 
     <form id="calibrationForm">
-        <!-- PART 1: General Information & Equipment Details -->
+        <!-- PART 1: General Information & Equipment Setup -->
         <div class="card">
-            <div class="card-header">PART 1: General Information & Equipment Setup</div>
+            <div class="card-header">PART 1: GENERAL INFORMATION & EQUIPMENT SETUP</div>
             <div class="card-body p-2">
                 <table class="table table-sm table-bordered mb-0 align-middle">
                     <tbody>
                         <tr>
-                            <th scope="row" class="w-15 bg-light">Client Name</th>
-                            <td><input type="text" class="table-input" id="clientName" placeholder="Client Name"></td>
-                            <th scope="row" class="w-15 bg-light">Cert No.</th>
-                            <td><input type="text" class="table-input" id="certNo" placeholder="CAL-2026-001"></td>
+                            <th scope="row" class="w-15 bg-light">CLIENT NAME</th>
+                            <td><input type="text" class="table-input caps-input" id="clientName" placeholder="CLIENT NAME"></td>
+                            <th scope="row" class="w-15 bg-light">CERT NO.</th>
+                            <td><input type="text" class="table-input caps-input" id="certNo" placeholder="CAL-2026-001"></td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Equipment</th>
-                            <td><input type="text" class="table-input" id="equipDesc" placeholder="e.g., Fuel Dispensing Unit"></td>
-                            <th scope="row" class="bg-light">Equipment ID</th>
-                            <td><input type="text" class="table-input" id="equipId" placeholder="e.g., EQ-PUMP-01"></td>
+                            <th scope="row" class="bg-light">SITE / LOCATION</th>
+                            <td><input type="text" class="table-input caps-input" id="siteLocation" placeholder="E.G., PUMWANI STATION"></td>
+                            <th scope="row" class="bg-light">ASSOCIATED WO#</th>
+                            <td><input type="text" class="table-input caps-input" id="associatedWo" placeholder="E.G., WO-5055"></td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Serial No.</th>
-                            <td><input type="text" class="table-input" id="serialNo" placeholder="Serial No."></td>
-                            <th scope="row" class="bg-light">Prover Can Size</th>
+                            <th scope="row" class="bg-light">EQUIPMENT</th>
+                            <td><input type="text" class="table-input caps-input" id="equipDesc" placeholder="E.G., FUEL DISPENSING UNIT"></td>
+                            <th scope="row" class="bg-light">EQUIPMENT ID</th>
+                            <td><input type="text" class="table-input caps-input" id="equipId" placeholder="E.G., EQ-PUMP-01"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">SERIAL NO.</th>
+                            <td><input type="text" class="table-input caps-input" id="serialNo" placeholder="SERIAL NO."></td>
+                            <th scope="row" class="bg-light">PROVER CAN SIZE</th>
                             <td>
                                 <div class="d-flex align-items-center gap-3 px-1">
                                     <div class="form-check m-0">
@@ -80,24 +105,24 @@
                             </td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Dispenser Status</th>
+                            <th scope="row" class="bg-light">DISPENSER STATUS</th>
                             <td>
                                 <div class="d-flex align-items-center gap-3 px-1">
                                     <div class="form-check m-0">
-                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusNew" value="New" checked>
-                                        <label class="form-check-label small" for="statusNew">New (1st Verification)</label>
+                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusNew" value="NEW" checked>
+                                        <label class="form-check-label small" for="statusNew">NEW (1ST VERIFICATION)</label>
                                     </div>
                                     <div class="form-check m-0">
-                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusInService" value="In-Service">
-                                        <label class="form-check-label small" for="statusInService">In-Service (Reverification)</label>
+                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusInService" value="IN-SERVICE">
+                                        <label class="form-check-label small" for="statusInService">IN-SERVICE (REVERIFICATION)</label>
                                     </div>
                                 </div>
                             </td>
-                            <th scope="row" class="bg-light">Inspection Date</th>
+                            <th scope="row" class="bg-light">INSPECTION DATE</th>
                             <td><input type="date" class="table-input" id="inspectDate"></td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Product Type</th>
+                            <th scope="row" class="bg-light">PRODUCT TYPE</th>
                             <td colspan="3">
                                 <div class="d-flex justify-content-start gap-4 align-items-center px-1">
                                     <div class="form-check form-check-inline m-0"><input class="form-check-input prod-check" type="checkbox" id="pms" value="PMS"><label class="form-check-label small" for="pms">PMS</label></div>
@@ -115,19 +140,19 @@
         <!-- PART 2: Calibration Data Input -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>PART 2: Nozzle Calibration & Verification Data</span>
-                <button type="button" class="btn btn-xs btn-outline-secondary py-0" id="addRowBtn" style="font-size: 0.75rem;">+ Add Nozzle</button>
+                <span>PART 2: NOZZLE CALIBRATION & VERIFICATION DATA</span>
+                <button type="button" class="btn btn-xs btn-outline-secondary py-0 text-uppercase" id="addRowBtn" style="font-size: 0.75rem;">+ ADD NOZZLE</button>
             </div>
             <div class="card-body p-2">
                 <table class="table table-sm table-bordered align-middle mb-1" id="calibrationTable">
                     <thead class="table-light">
-                        <tr>
+                        <tr class="text-uppercase">
                             <th style="width: 8%;">NOZZLE#</th>
-                            <th style="width: 18%;">Dispenser Register<br><small class="text-muted">(Indicated Reading - L)</small></th>
-                            <th style="width: 18%;">Prover Can Standard<br><small class="text-muted">(Actual Measure - L)</small></th>
-                            <th style="width: 12%;">Obs. Error (%)</th>
-                            <th style="width: 22%;">Department of Weights & Measures Verdict</th>
-                            <th style="width: 22%;">Volumetric Analysis & Financial Impact</th>
+                            <th style="width: 18%;">DISPENSER REGISTER<br><small class="text-muted">(INDICATED READING - L)</small></th>
+                            <th style="width: 18%;">PROVER CAN STANDARD<br><small class="text-muted">(ACTUAL MEASURE - L)</small></th>
+                            <th style="width: 12%;">OBS. ERROR (%)</th>
+                            <th style="width: 22%;">DEPARTMENT OF WEIGHTS & MEASURES VERDICT</th>
+                            <th style="width: 22%;">VOLUMETRIC ANALYSIS & FINANCIAL IMPACT</th>
                         </tr>
                     </thead>
                     <tbody id="calTableBody"></tbody>
@@ -139,21 +164,21 @@
         <div class="row g-2">
             <div class="col-md-6">
                 <div class="card h-100">
-                    <div class="card-header">PART 3: Environmental Conditions</div>
+                    <div class="card-header">PART 3: ENVIRONMENTAL CONDITIONS</div>
                     <div class="card-body p-2">
                         <table class="table table-sm table-bordered mb-0 align-middle">
                             <tbody>
                                 <tr>
-                                    <th scope="row" class="bg-light">Amb Temp (°C)</th>
-                                    <td><input type="text" class="table-input" id="ambTemp" placeholder="25.00"></td>
+                                    <th scope="row" class="bg-light">AMB TEMP (°C)</th>
+                                    <td><input type="text" class="table-input caps-input" id="ambTemp" placeholder="25.00"></td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="bg-light">Prod Temp (°C)</th>
-                                    <td><input type="text" class="table-input" id="prodTemp" placeholder="23.50"></td>
+                                    <th scope="row" class="bg-light">PROD TEMP (°C)</th>
+                                    <td><input type="text" class="table-input caps-input" id="prodTemp" placeholder="23.50"></td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="bg-light">Density (kg/m³)</th>
-                                    <td><input type="text" class="table-input" id="density" placeholder="745.00"></td>
+                                    <th scope="row" class="bg-light">DENSITY (KG/M³)</th>
+                                    <td><input type="text" class="table-input caps-input" id="density" placeholder="745.00"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -162,21 +187,21 @@
             </div>
             <div class="col-md-6">
                 <div class="card h-100">
-                    <div class="card-header">PART 4: Traceability & Seal Register</div>
+                    <div class="card-header">PART 4: TRACEABILITY & SEAL REGISTER</div>
                     <div class="card-body p-2">
                         <table class="table table-sm table-bordered mb-0 align-middle">
                             <tbody>
                                 <tr>
-                                    <th scope="row" class="bg-light">Prover ID</th>
-                                    <td><input type="text" class="table-input" id="proverId" placeholder="FWL-PROVER-20L"></td>
+                                    <th scope="row" class="bg-light">PROVER ID</th>
+                                    <td><input type="text" class="table-input caps-input" id="proverId" placeholder="FWL-PROVER-20L"></td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="bg-light">Cert No.</th>
-                                    <td><input type="text" class="table-input" id="traceCert" placeholder="WM-2026-99"></td>
+                                    <th scope="row" class="bg-light">CERT NO.</th>
+                                    <td><input type="text" class="table-input caps-input" id="traceCert" placeholder="WM-2026-99"></td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="bg-light">New Seal No.</th>
-                                    <td><input type="text" class="table-input" id="newSeal" placeholder="SL-994011"></td>
+                                    <th scope="row" class="bg-light">NEW SEAL NO.</th>
+                                    <td><input type="text" class="table-input caps-input" id="newSeal" placeholder="SL-994011"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -187,39 +212,39 @@
 
         <!-- PART 5: Sign-Offs & Digital Signatures -->
         <div class="card mt-2">
-            <div class="card-header">PART 5: Final Authorization & Sign-Offs</div>
+            <div class="card-header">PART 5: FINAL AUTHORIZATION & SIGN-OFFS</div>
             <div class="card-body p-2">
                 <div class="row g-2 mb-2">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold mb-0">Overall Compliance Status</label>
-                        <select class="form-select form-select-sm" id="finalVerdict" style="font-family: inherit;">
-                            <option value="PASSED - Certified for Legal Metrology Trade">PASSED - Certified for Legal Metrology Trade</option>
-                            <option value="FAILED - Non-Compliant / Rejected">FAILED - Non-Compliant / Rejected</option>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold mb-0">OVERALL COMPLIANCE STATUS</label>
+                        <select class="form-select form-select-sm" id="finalVerdict">
+                            <option value="PASSED - CERTIFIED FOR LEGAL METROLOGY TRADE">PASSED - CERTIFIED FOR LEGAL METROLOGY TRADE</option>
+                            <option value="FAILED - NON-COMPLIANT / REJECTED">FAILED - NON-COMPLIANT / REJECTED</option>
                         </select>
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label fw-bold mb-0">Inspector General Notes</label>
-                        <input type="text" class="table-input" id="techNotes" placeholder="Operational notes or calibration seal details...">
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold mb-0">INSPECTOR GENERAL NOTES</label>
+                        <input type="text" class="table-input caps-input" id="techNotes" placeholder="OPERATIONAL NOTES OR CALIBRATION SEAL DETAILS...">
                     </div>
                 </div>
                 <table class="table table-sm table-bordered mb-0 align-middle">
                     <tbody>
                         <tr>
-                            <th scope="row" class="w-15 bg-light">Inspector</th>
-                            <td><input type="text" class="table-input" id="inspectorName" placeholder="Engineer Name"></td>
-                            <th scope="row" class="w-15 bg-light">Client Rep</th>
-                            <td><input type="text" class="table-input" id="clientRep" placeholder="Manager Name"></td>
+                            <th scope="row" class="w-15 bg-light">INSPECTOR</th>
+                            <td><input type="text" class="table-input caps-input" id="inspectorName" placeholder="ENGINEER NAME"></td>
+                            <th scope="row" class="w-15 bg-light">CLIENT REP</th>
+                            <td><input type="text" class="table-input caps-input" id="clientRep" placeholder="MANAGER NAME"></td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Signature</th>
+                            <th scope="row" class="bg-light">SIGNATURE</th>
                             <td class="text-center">
-                                <button type="button" class="btn btn-xs btn-outline-primary py-0" onclick="openSignatureModal('inspector')">Sign</button>
-                                <img id="inspSigPreview" class="signature-preview" alt="Signature">
+                                <button type="button" class="btn btn-xs btn-outline-primary py-0 text-uppercase" onclick="openSignatureModal('inspector')">SIGN</button>
+                                <img id="inspSigPreview" class="signature-preview" alt="SIGNATURE">
                             </td>
-                            <th scope="row" class="bg-light">Signature</th>
+                            <th scope="row" class="bg-light">SIGNATURE</th>
                             <td class="text-center">
-                                <button type="button" class="btn btn-xs btn-outline-primary py-0" onclick="openSignatureModal('client')">Sign</button>
-                                <img id="clientSigPreview" class="signature-preview" alt="Signature">
+                                <button type="button" class="btn btn-xs btn-outline-primary py-0 text-uppercase" onclick="openSignatureModal('client')">SIGN</button>
+                                <img id="clientSigPreview" class="signature-preview" alt="SIGNATURE">
                             </td>
                         </tr>
                     </tbody>
@@ -228,8 +253,10 @@
         </div>
     </form>
 
+    <!-- Footer boundary line -->
+    <div class="footer-line"></div>
     <div class="footer-note">
-        Forecourt Works, Engineering Reliability into every forecourt
+        FORECOURT WORKS, ENGINEERING RELIABILITY INTO EVERY FORECOURT
     </div>
 
     <!-- Signature Modal -->
@@ -237,15 +264,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title h6">Draw Digital Signature</h5>
+                    <h5 class="modal-title h6 text-uppercase">DRAW DIGITAL SIGNATURE</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
                     <canvas id="sigCanvas" width="400" height="150"></canvas>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-sm btn-secondary" id="clearSigBtn">Clear</button>
-                    <button type="button" class="btn btn-sm btn-primary" id="saveSigBtn">Save Signature</button>
+                    <button type="button" class="btn btn-sm btn-secondary text-uppercase" id="clearSigBtn">CLEAR</button>
+                    <button type="button" class="btn btn-sm btn-primary text-uppercase" id="saveSigBtn">SAVE SIGNATURE</button>
                 </div>
             </div>
         </div>
