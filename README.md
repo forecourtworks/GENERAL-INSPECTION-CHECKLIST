@@ -1,16 +1,15 @@
-# Equipment Calibration & Inspection Portal
+# Comprehensive Field Calibration & Inspection System
 
-A lightweight web application designed to capture field inspection, asset calibration parameters, and measurement verification data. Generates formatted PDF export reports directly from the browser.
+An enterprise-ready field verification and equipment calibration application designed for technical service contractors, station auditors, and industrial metrology inspectors.
 
-## Key Features
-* **Structured Tables:** Part 1 (General Information) and Part 2 (Calibration Measurements) organized in responsive, structured grid layouts.
-* **Flexible Input Engine:** Supports numeric entries alongside plain text entries in measurement fields without breaking execution loops.
-* **Auto-Formatting:** Automatically formats pure numeric inputs to two decimal places (`0.00`) upon field completion.
-* **Rectified Calculations:** Corrected percentage error formula `((Indicated - Standard) / Standard) * 100` and overall dynamic mean calculation.
-* **PDF Export:** Integrated client-side export generating structured tables with auto-calculated values.
+## Complete Inspection Module Structure
+1. **Part 1: General Information & Asset Identification** (Client, Certificate Number, Make, Model, Fuel/Product Line, Serial Numbers, and Location).
+2. **Part 2: Calibration Data & Accuracy Verification** (Dynamic measurement runs, text/numeric handling, automatic formatting to 2 decimal places, percentage error calculations, and mean average tallying).
+3. **Part 3: Environmental Conditions & Pre-Test Checks** (Ambient temperature, product temperature, fuel density, and visual hardware integrity checks).
+4. **Part 4: Traceability & Seal Register** (Reference prover tank certificate numbers, old seal tracking, and new security seal logging).
+5. **Part 5: Compliance Verdict & Authorization** (Pass/Fail status selector, inspector field notes, and digital sign-off fields for lead engineers and client site managers).
 
-## Usage
-1. Open `index.html` in any modern web browser.
-2. Fill out Part 1 (Client, Certificate, and Asset Details).
-3. Record measurements in Part 2. Input values auto-format to 2 decimal places (`0.00`). Text values (e.g., "N/A", "Blocked") are safely retained.
-4. Click **Export PDF** to produce the final PDF inspection report.
+## Page Boundary Control & PDF Layout
+* **Strict A4 Geometry:** Formatted for standard A4 boundaries (`210mm x 297mm`).
+* **Controlled Page Breaks:** Ensures heavy measurement runs do not cause table clipping or orphan text at page bottoms.
+* **Auto-Pagination:** Includes auto-calculated dynamic headers and page footers (`Page X of Y`) with verification timestamps.
