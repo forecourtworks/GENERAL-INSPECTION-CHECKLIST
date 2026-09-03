@@ -3,71 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calibration & Inspection Portal</title>
+    <title>Comprehensive Field Calibration & Inspection System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background-color: #f8f9fa; font-family: Arial, sans-serif; }
-        .card { margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .table-input { width: 100%; border: 1px solid #ced4da; border-radius: 4px; padding: 4px 8px; }
-        .table-input:focus { border-color: #86b7fe; outline: 0; }
-        .header-title { color: #0d6efd; font-weight: bold; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { margin-bottom: 1.5rem; border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .card-header { font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.9rem; }
+        .table-input { width: 100%; border: 1px solid #ced4da; border-radius: 4px; padding: 4px 8px; font-size: 0.9rem; }
+        .table-input:focus { border-color: #0d6efd; outline: 0; box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25); }
+        .section-title { color: #0d6efd; font-weight: 700; }
+        .a4-preview-notice { background: #e9ecef; border-left: 4px solid #0d6efd; padding: 8px 12px; font-size: 0.85rem; }
     </style>
 </head>
 <body class="container py-4">
 
     <header class="pb-3 mb-4 border-bottom d-flex justify-content-between align-items-center">
-        <h1 class="h3 header-title">Equipment Calibration & Inspection Report</h1>
-        <button id="exportPdfBtn" class="btn btn-primary">Export PDF</button>
+        <div>
+            <h1 class="h3 section-title mb-0">Field Calibration & Asset Inspection Report</h1>
+            <small class="text-muted">Standards-compliant verification, measurement, & certificate engine</small>
+        </div>
+        <button id="exportPdfBtn" class="btn btn-primary px-4 fw-bold">Export PDF Certificate</button>
     </header>
+
+    <div class="a4-preview-notice mb-4">
+        <strong>PDF Page Boundary Enforcement:</strong> Output is calibrated to fit standard A4 margins (210mm x 297mm). Data entries, table structures, and sign-offs dynamically break across clean page borders.
+    </div>
 
     <form id="calibrationForm">
         <!-- PART 1: General Information & Equipment Details -->
         <div class="card">
-            <div class="card-header bg-primary text-white font-weight-bold">
-                PART 1: General Information & Equipment Details
+            <div class="card-header bg-primary text-white">
+                PART 1: General Information & Asset Identification
             </div>
             <div class="card-body">
-                <table class="table table-bordered">
+                <table class="table table-bordered mb-0 align-middle">
                     <tbody>
                         <tr>
-                            <th scope="row" class="w-25 bg-light">Client Name</th>
-                            <td><input type="text" class="table-input" id="clientName" placeholder="Enter Client Name"></td>
-                            <th scope="row" class="w-25 bg-light">Certificate No.</th>
+                            <th scope="row" class="w-20 bg-light">Client / Facility</th>
+                            <td><input type="text" class="table-input" id="clientName" placeholder="Client or Station Name"></td>
+                            <th scope="row" class="w-20 bg-light">Certificate No.</th>
                             <td><input type="text" class="table-input" id="certNo" placeholder="e.g., CAL-2026-001"></td>
                         </tr>
                         <tr>
-                            <th scope="row" class="bg-light">Equipment Description</th>
-                            <td><input type="text" class="table-input" id="equipDesc" placeholder="e.g., Fuel Dispensing Unit"></td>
+                            <th scope="row" class="bg-light">Equipment / Unit</th>
+                            <td><input type="text" class="table-input" id="equipDesc" placeholder="e.g., Fuel Dispensing Unit / Meter"></td>
                             <th scope="row" class="bg-light">Serial Number</th>
-                            <td><input type="text" class="table-input" id="serialNo" placeholder="Enter Serial No."></td>
+                            <td><input type="text" class="table-input" id="serialNo" placeholder="Equipment Serial No."></td>
                         </tr>
                         <tr>
                             <th scope="row" class="bg-light">Inspection Date</th>
                             <td><input type="date" class="table-input" id="inspectDate"></td>
-                            <th scope="row" class="bg-light">Location / Station</th>
-                            <td><input type="text" class="table-input" id="location" placeholder="Enter Site Location"></td>
+                            <th scope="row" class="bg-light">Site Location</th>
+                            <td><input type="text" class="table-input" id="location" placeholder="Town / GPS / Station Point"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">Manufacturer</th>
+                            <td><input type="text" class="table-input" id="makeModel" placeholder="e.g., Gilbarco / Wayne / Bennett"></td>
+                            <th scope="row" class="bg-light">Product Type</th>
+                            <td><input type="text" class="table-input" id="productType" placeholder="e.g., PMS / AGO / IK"></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- PART 2: Calibration Data Input & Analysis -->
+        <!-- PART 2: Calibration Data & Accuracy Measurements -->
         <div class="card">
-            <div class="card-header bg-primary text-white font-weight-bold">
-                PART 2: Calibration Data & Accuracy Measurements
+            <div class="card-header bg-primary text-white">
+                PART 2: Calibration Data & Accuracy Verification
             </div>
             <div class="card-body">
-                <p class="text-muted small">Enter target standard volume, measured volume, or remarks (accepts text and numeric inputs formatted to 2 decimal places).</p>
+                <p class="text-muted small mb-2">Accepts numeric entries (auto-formatted to 2 decimal places) and raw text observations (e.g., Blocked, Skip). Formula: <code>((Indicated - Standard) / Standard) * 100</code>.</p>
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle" id="calibrationTable">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 10%;">Run #</th>
-                                <th style="width: 25%;">Standard Measure (L)</th>
-                                <th style="width: 25%;">Indicated Display (L)</th>
+                                <th style="width: 8%;">Run #</th>
+                                <th style="width: 23%;">Standard Measure (L)</th>
+                                <th style="width: 23%;">Indicated Display (L)</th>
                                 <th style="width: 20%;">Error (%)</th>
-                                <th style="width: 20%;">Status / Remarks</th>
+                                <th style="width: 26%;">Status / Remarks</th>
                             </tr>
                         </thead>
                         <tbody id="calTableBody">
@@ -75,14 +90,109 @@
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
-                                <td colspan="3" class="text-end font-weight-bold">Average Percentage Error:</td>
-                                <td id="avgErrorCell" class="fw-bold">0.00%</td>
+                                <td colspan="3" class="text-end fw-bold">Average Percentage Error:</td>
+                                <td id="avgErrorCell" class="fw-bold text-primary">0.00%</td>
                                 <td></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn">+ Add Measurement Row</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn">+ Add Measurement Run</button>
+            </div>
+        </div>
+
+        <!-- PART 3: Environmental Conditions & Visual Inspections -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                PART 3: Environmental Conditions & Pre-Test Checks
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered mb-0 align-middle">
+                    <tbody>
+                        <tr>
+                            <th scope="row" class="w-25 bg-light">Ambient Temp (°C)</th>
+                            <td><input type="text" class="table-input env-input" id="ambTemp" placeholder="25.00"></td>
+                            <th scope="row" class="w-25 bg-light">Product Temp (°C)</th>
+                            <td><input type="text" class="table-input env-input" id="prodTemp" placeholder="23.50"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">Reference Density (kg/m³)</th>
+                            <td><input type="text" class="table-input env-input" id="density" placeholder="745.00"></td>
+                            <th scope="row" class="bg-light">Visual Integrity Check</th>
+                            <td>
+                                <select class="form-select form-select-sm" id="visualCheck">
+                                    <option value="SATISFACTORY">SATISFACTORY</option>
+                                    <option value="DEFECTIVE">DEFECTIVE</option>
+                                    <option value="NEEDS MAINTENANCE">NEEDS MAINTENANCE</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PART 4: Reference Standards & Security Seals -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                PART 4: Traceability & Seal Register
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered mb-0 align-middle">
+                    <tbody>
+                        <tr>
+                            <th scope="row" class="w-25 bg-light">Prover Tank / Standard ID</th>
+                            <td><input type="text" class="table-input" id="proverId" placeholder="e.g., 20L Standard Prover #04"></td>
+                            <th scope="row" class="w-25 bg-light">Traceability Cert No.</th>
+                            <td><input type="text" class="table-input" id="traceCert" placeholder="e.g., WEIGHTS-MEASURES-2025-99"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">Old Seal Serial No.</th>
+                            <td><input type="text" class="table-input" id="oldSeal" placeholder="e.g., SL-883910"></td>
+                            <th scope="row" class="bg-light">New Seal Serial No.</th>
+                            <td><input type="text" class="table-input" id="newSeal" placeholder="e.g., SL-994011"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PART 5: Compliance Verdict & Sign-Off Block -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                PART 5: Final Compliance Verdict & Sign-Offs
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Overall Inspection Verdict</label>
+                        <select class="form-select fw-bold" id="finalVerdict">
+                            <option value="PASSED - Certified for Commercial Use" class="text-success">PASSED - Certified for Commercial Use</option>
+                            <option value="FAILED - Out of Tolerance (Rejected)" class="text-danger">FAILED - Out of Tolerance (Rejected)</option>
+                            <option value="CONDITIONAL - Adjustments Required" class="text-warning">CONDITIONAL - Adjustments Required</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Technician / Inspector Notes</label>
+                        <input type="text" class="table-input" id="techNotes" placeholder="e.g., Pulser calibration adjusted prior to final run.">
+                    </div>
+                </div>
+                <table class="table table-bordered mb-0 align-middle">
+                    <tbody>
+                        <tr>
+                            <th scope="row" class="w-20 bg-light">Inspector Name</th>
+                            <td><input type="text" class="table-input" id="inspectorName" placeholder="Lead Field Engineer"></td>
+                            <th scope="row" class="w-20 bg-light">Client Rep Name</th>
+                            <td><input type="text" class="table-input" id="clientRep" placeholder="Station Supervisor / Manager"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">Inspector Signature</th>
+                            <td><input type="text" class="table-input" id="inspSig" placeholder="[ Signed Digitally ]"></td>
+                            <th scope="row" class="bg-light">Client Signature</th>
+                            <td><input type="text" class="table-input" id="clientSig" placeholder="[ Signed Digitally ]"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </form>
