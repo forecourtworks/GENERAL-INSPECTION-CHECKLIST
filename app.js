@@ -4,34 +4,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const exportPdfBtn = document.getElementById("exportPdfBtn");
     const avgErrorCell = document.getElementById("avgErrorCell");
 
-    // Initialize with 3 baseline measurement rows
-    for (let i = 1; i <= 3; i++) {
-        addRow(i);
-    }
+    let currentSigTarget = null;
+    let signatures = { inspector: null, client: null };
 
-    addRowBtn.addEventListener("click", () => {
-        const rowCount = tableBody.children.length + 1;
-        addRow(rowCount);
-    });
+    // Canvas Setup
+    const sigModal = new bootstrap.Modal(document.getElementById("signatureModal"));
+    const canvas = document.getElementById("sigCanvas");
+    const ctx = canvas.getContext("2d");
+    let isDrawing = false;
 
-    // Auto-format environmental fields to 2 decimal places
-    document.querySelectorAll(".env-input").forEach(input => {
-        input.addEventListener("blur", (e) => {
-            let val = e.target.value.trim();
-            if (val !== "" && !isNaN(val)) {
-                e.target.value = parseFloat(val).toFixed(2);
-            }
-        });
-    });
+    // Initialize 3 default Nozzle rows
+    for (let i = 1; i <= 3; i++) addRow(i);
 
-    function addRow(runNumber) {
+    addRowBtn.addEventListener("click", () => addRow(tableBody.children.length + 1));
+
+    function addRow(nozzleNumber) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td class="text-center fw-bold">${runNumber}</td>
+            <td class="text-center fw-bold">${nozzleNumber}</td>
             <td><input type="text" class="table-input std-input" placeholder="20.00" value="20.00"></td>
             <td><input type="text" class="table-input ind-input" placeholder="0.00"></td>
             <td><input type="text" class="table-input err-input" readonly placeholder="0.00%"></td>
-            <td><input type="text" class="table-input remark-input" placeholder="Pass / Fail / Notes"></td>
+            <td><input type="text" class="table-input remark-input" placeholder="Pass / Fail"></td>
         `;
         tableBody.appendChild(tr);
         attachRowEvents(tr);
@@ -51,12 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function formatAndCalculate(row, activeInput) {
         let val = activeInput.value.trim();
-        
-        // Format to 2 decimal places if numerical entry
         if (val !== "" && !isNaN(val)) {
             activeInput.value = parseFloat(val).toFixed(2);
         }
-
         calculateRowError(row);
         calculateOverallAverage();
     }
@@ -66,7 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const indVal = parseFloat(row.querySelector(".ind-input").value);
         const errInput = row.querySelector(".err-input");
 
-        // Percentage Error Formula: ((Indicated - Standard) / Standard) * 100
         if (!isNaN(stdVal) && !isNaN(indVal) && stdVal !== 0) {
             const errorPercent = ((indVal - stdVal) / stdVal) * 100;
             errInput.value = errorPercent.toFixed(2) + "%";
@@ -77,8 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function calculateOverallAverage() {
         const errInputs = document.querySelectorAll(".err-input");
-        let totalError = 0;
-        let validCount = 0;
+        let totalError = 0, validCount = 0;
 
         errInputs.forEach(input => {
             const val = parseFloat(input.value.replace("%", ""));
@@ -88,163 +77,145 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        if (validCount > 0) {
-            const avg = totalError / validCount;
-            avgErrorCell.textContent = avg.toFixed(2) + "%";
-        } else {
-            avgErrorCell.textContent = "0.00%";
-        }
+        avgErrorCell.textContent = validCount > 0 ? (totalError / validCount).toFixed(2) + "%" : "0.00%";
     }
 
-    // PDF Export Logic with Restored Page Boundaries & Multi-Page Rules
+    // Signature Canvas Logic
+    window.openSignatureModal = (target) => {
+        currentSigTarget = target;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        sigModal.show();
+    };
+
+    canvas.addEventListener("mousedown", (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+    canvas.addEventListener("mousemove", (e) => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
+    canvas.addEventListener("mouseup", () => isDrawing = false);
+
+    document.getElementById("clearSigBtn").addEventListener("click", () => ctx.clearRect(0, 0, canvas.width, canvas.height));
+    document.getElementById("saveSigBtn").addEventListener("click", () => {
+        const dataUrl = canvas.toDataURL();
+        signatures[currentSigTarget] = dataUrl;
+        const imgEl = document.getElementById(`${currentSigTarget}SigPreview`);
+        imgEl.src = dataUrl;
+        imgEl.style.display = "inline-block";
+        sigModal.hide();
+    });
+
+    // 1-PAGE PDF Export Logic
     exportPdfBtn.addEventListener("click", () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
+        const margin = 10;
         const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 14;
 
-        // Page Header Helper
-        const addHeader = (title) => {
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(13, 110, 253);
-            doc.text(title, margin, 15);
-            doc.setDrawColor(200, 200, 200);
-            doc.line(margin, 18, pageWidth - margin, 18);
-        };
+        // Header Top Left Details
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("FORECOURT WORKS LIMITED", margin, 12);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text("Ramco Court, Gate 3B, Bellevue, Nairobi", margin, 16);
+        doc.text("Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke", margin, 20);
 
-        // Footer Helper for Page Numbers
-        const addFooter = (currentPage, totalPages) => {
-            doc.setFontSize(8);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(128, 128, 128);
-            doc.text(`Page ${currentPage} of ${totalPages} - Generated by Calibration Portal`, margin, pageHeight - 10);
-            doc.text(new Date().toLocaleDateString(), pageWidth - margin - 20, pageHeight - 10);
-        };
+        // Header Top Right Logo
+        const logoImg = document.getElementById("companyLogo");
+        try {
+            doc.addImage(logoImg, 'PNG', pageWidth - margin - 35, 8, 35, 14);
+        } catch (e) {
+            console.warn("Logo skipped or failed to load into PDF.");
+        }
 
-        // --- PAGE 1: Parts 1, 2, and 3 ---
-        addHeader("EQUIPMENT CALIBRATION & INSPECTION REPORT");
+        doc.setLineWidth(0.5);
+        doc.line(margin, 24, pageWidth - margin, 24);
 
-        // Part 1 Table
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Part 1: General Information & Asset Identification", margin, 24);
-
+        // Part 1: Selected Products
+        const selectedProducts = Array.from(document.querySelectorAll('.prod-check:checked')).map(cb => cb.value).join(", ") || "None";
         const part1Data = [
             ["Client Name", document.getElementById("clientName").value, "Certificate No.", document.getElementById("certNo").value],
-            ["Equipment Desc.", document.getElementById("equipDesc").value, "Serial Number", document.getElementById("serialNo").value],
+            ["Equipment", document.getElementById("equipDesc").value, "Serial Number", document.getElementById("serialNo").value],
             ["Inspection Date", document.getElementById("inspectDate").value, "Location", document.getElementById("location").value],
-            ["Make / Model", document.getElementById("makeModel").value, "Product Type", document.getElementById("productType").value]
+            ["Manufacturer", document.getElementById("makeModel").value, "Product Type", selectedProducts]
         ];
 
         doc.autoTable({
-            startY: 27,
+            startY: 26,
             body: part1Data,
             theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
+            styles: { fontSize: 7.5, cellPadding: 1.2 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Part 2 Table
-        let currentY = doc.lastAutoTable.finalY + 8;
-        doc.text("Part 2: Calibration Measurements & Calculations", margin, currentY);
-
+        // Part 2: Calibration Table
         const calRows = document.querySelectorAll("#calTableBody tr");
         const part2Data = [];
-
         calRows.forEach((row, idx) => {
-            const std = row.querySelector(".std-input").value;
-            const ind = row.querySelector(".ind-input").value;
-            const err = row.querySelector(".err-input").value;
-            const rem = row.querySelector(".remark-input").value;
-            part2Data.push([idx + 1, std, ind, err, rem]);
+            part2Data.push([
+                idx + 1,
+                row.querySelector(".std-input").value,
+                row.querySelector(".ind-input").value,
+                row.querySelector(".err-input").value,
+                row.querySelector(".remark-input").value
+            ]);
         });
-
         part2Data.push([{ content: "Average Error", colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } }, avgErrorCell.textContent, ""]);
 
         doc.autoTable({
-            startY: currentY + 3,
-            head: [["Run #", "Standard Measure (L)", "Indicated Display (L)", "Error (%)", "Remarks"]],
+            startY: doc.lastAutoTable.finalY + 4,
+            head: [["NOZZLE#", "Standard (L)", "Indicated (L)", "Error (%)", "Remarks"]],
             body: part2Data,
             theme: 'striped',
-            headStyles: { fillColor: [13, 110, 253] },
-            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [50, 50, 50], fontSize: 7.5 },
+            styles: { fontSize: 7.5, cellPadding: 1.2 },
             margin: { left: margin, right: margin }
         });
 
-        // Part 3 Table
-        currentY = doc.lastAutoTable.finalY + 8;
-        doc.text("Part 3: Environmental Conditions & Pre-Test Checks", margin, currentY);
-
-        const part3Data = [
-            ["Ambient Temp (°C)", document.getElementById("ambTemp").value, "Product Temp (°C)", document.getElementById("prodTemp").value],
-            ["Reference Density (kg/m³)", document.getElementById("density").value, "Visual Integrity", document.getElementById("visualCheck").value]
+        // Part 3 & 4 (Combined Row)
+        const part3_4_Data = [
+            ["Amb Temp (°C)", document.getElementById("ambTemp").value, "Prover ID", document.getElementById("proverId").value],
+            ["Prod Temp (°C)", document.getElementById("prodTemp").value, "Traceability Cert", document.getElementById("traceCert").value],
+            ["Density (kg/m³)", document.getElementById("density").value, "New Seal No.", document.getElementById("newSeal").value]
         ];
 
         doc.autoTable({
-            startY: currentY + 3,
-            body: part3Data,
+            startY: doc.lastAutoTable.finalY + 4,
+            body: part3_4_Data,
             theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
+            styles: { fontSize: 7.5, cellPadding: 1.2 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // --- PAGE 2: Boundary Break for Traceability, Verdict & Sign-offs ---
-        doc.addPage();
-        addHeader("EQUIPMENT CALIBRATION REPORT (Cont.)");
-
-        // Part 4 Table
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Part 4: Traceability & Seal Register", margin, 24);
-
-        const part4Data = [
-            ["Prover Tank / Standard ID", document.getElementById("proverId").value, "Traceability Cert No.", document.getElementById("traceCert").value],
-            ["Old Seal Serial No.", document.getElementById("oldSeal").value, "New Seal Serial No.", document.getElementById("newSeal").value]
-        ];
-
-        doc.autoTable({
-            startY: 27,
-            body: part4Data,
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
-            columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
-            margin: { left: margin, right: margin }
-        });
-
-        // Part 5 Table & Verdict
-        currentY = doc.lastAutoTable.finalY + 8;
-        doc.text("Part 5: Compliance Verdict & Authorization Sign-Offs", margin, currentY);
-
-        const verdict = document.getElementById("finalVerdict").value;
-        const notes = document.getElementById("techNotes").value;
-
+        // Part 5: Verdict & Sign-Offs
         const part5Data = [
-            ["Overall Final Verdict", verdict, "Inspector Notes", notes],
-            ["Lead Inspector Name", document.getElementById("inspectorName").value, "Client Representative", document.getElementById("clientRep").value],
-            ["Inspector Signature", document.getElementById("inspSig").value, "Client Signature", document.getElementById("clientSig").value]
+            ["Verdict", document.getElementById("finalVerdict").value, "Notes", document.getElementById("techNotes").value],
+            ["Inspector Name", document.getElementById("inspectorName").value, "Client Rep Name", document.getElementById("clientRep").value]
         ];
 
         doc.autoTable({
-            startY: currentY + 3,
+            startY: doc.lastAutoTable.finalY + 4,
             body: part5Data,
             theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 3 },
+            styles: { fontSize: 7.5, cellPadding: 1.5 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Apply page footers across pages
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            addFooter(i, totalPages);
+        let currentY = doc.lastAutoTable.finalY + 4;
+
+        // Render Digital Signatures onto PDF
+        if (signatures.inspector) {
+            doc.addImage(signatures.inspector, 'PNG', margin + 30, currentY, 25, 10);
+        }
+        if (signatures.client) {
+            doc.addImage(signatures.client, 'PNG', pageWidth - margin - 45, currentY, 25, 10);
         }
 
-        doc.save("Complete_Calibration_Certificate.pdf");
+        // Footer Note Centered
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bolditalic");
+        doc.text("Forecourt Works, Engineering Reliability into every forecourt", pageWidth / 2, 285, { align: "center" });
+
+        doc.save("Forecourt_Works_Calibration_Certificate.pdf");
     });
 });
