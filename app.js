@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctx = canvas.getContext("2d");
     let isDrawing = false;
 
-    // Default Prover Can size
     function getSelectedProverSize() {
         const checked = document.querySelector('.prover-radio:checked');
         return checked ? parseFloat(checked.value) : 20.0;
@@ -22,12 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return checked ? checked.value : "New";
     }
 
-    // Initialize 3 default Nozzle rows
     for (let i = 1; i <= 3; i++) addRow(i);
 
     addRowBtn.addEventListener("click", () => addRow(tableBody.children.length + 1));
 
-    // Global listeners for setting changes
     document.querySelectorAll('.prover-radio, .status-radio').forEach(radio => {
         radio.addEventListener('change', () => {
             const proverVol = getSelectedProverSize();
@@ -91,20 +88,16 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Percentage Error Calculation
         const obsError = ((indVal - stdVal) / stdVal) * 100;
         const obsErrorFormatted = (obsError >= 0 ? "+" : "") + obsError.toFixed(2) + "%";
         errInput.value = obsErrorFormatted;
 
         const status = getSelectedDispenserStatus();
-        
-        // Department of Weights & Measures MPE statutory limits
         let upperMpe = (status === "New") ? 0.25 : 0.50;
         let lowerMpe = (status === "New") ? -0.125 : -0.25;
 
         let isPassed = obsError >= lowerMpe && obsError <= upperMpe;
         
-        // Compute Factor relative to legal MPE limit
         let factor = 0;
         if (obsError > upperMpe) {
             factor = obsError / upperMpe;
@@ -120,26 +113,30 @@ document.addEventListener("DOMContentLoaded", () => {
             verdictCell.innerHTML = `FAIL - Exceeds ${status} limit by factor of ${factor.toFixed(1)}<br><span style="font-size:0.7rem;">(Observed: ${obsErrorFormatted} | Legal MPE: ${lowerMpe}% to +${upperMpe}%)</span>`;
         }
 
-        // Volumetric Financial Analysis
-        const diffVol = indVal - stdVal; // Indicated minus Standard
+        const diffVol = indVal - stdVal;
         const absDiffVol = Math.abs(diffVol);
         const mlPerLiter = (absDiffVol / stdVal) * 1000;
 
-        if (Math.abs(diffVol) < 0.001) {
+        // Corrected logic: evaluate tolerance before issuing warnings/fails
+        if (isPassed) {
             analysisCell.className = "analysis-cell small text-success";
-            analysisCell.textContent = "Zero Volumetric Deviation. Meter calibrated perfectly.";
-        } else if (diffVol > 0) {
-            // Dispenser shows MORE than actual measure in prover
-            analysisCell.className = "analysis-cell small text-danger";
-            analysisCell.textContent = `CUSTOMER LOSING / STATION GAINING — Customer pays for ${indVal.toFixed(2)}L but receives ${stdVal.toFixed(2)}L. Meter is over-registering by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L).`;
+            if (Math.abs(diffVol) < 0.001) {
+                analysisCell.textContent = "PASS — Zero Volumetric Deviation. Meter calibrated perfectly.";
+            } else if (diffVol > 0) {
+                analysisCell.textContent = `PASS — Minor over-registration (+${absDiffVol.toFixed(2)}L, ${mlPerLiter.toFixed(1)} ml/L), within allowable legal tolerance limits.`;
+            } else {
+                analysisCell.textContent = `PASS — Minor under-registration (-${absDiffVol.toFixed(2)}L, ${mlPerLiter.toFixed(1)} ml/L), within allowable legal tolerance limits.`;
+            }
         } else {
-            // Dispenser shows LESS than actual measure in prover
-            analysisCell.className = "analysis-cell small text-warning text-dark";
-            analysisCell.textContent = `CUSTOMER GAINING / STATION LOSING — Customer pays for ${indVal.toFixed(2)}L but receives ${stdVal.toFixed(2)}L. Prover indicates dispenser meter is under-registering fuel sold by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L), so the site is giving away product.`;
+            analysisCell.className = "analysis-cell small text-danger";
+            if (diffVol > 0) {
+                analysisCell.textContent = `FAIL — CUSTOMER LOSING / STATION GAINING. Over-registering beyond allowable tolerance by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L). Immediate adjustment required.`;
+            } else {
+                analysisCell.textContent = `FAIL — CUSTOMER GAINING / STATION LOSING. Under-registering beyond allowable tolerance by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L). Site is giving away product.`;
+            }
         }
     }
 
-    // Signature Canvas Setup
     window.openSignatureModal = (target) => {
         currentSigTarget = target;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -160,38 +157,53 @@ document.addEventListener("DOMContentLoaded", () => {
         sigModal.hide();
     });
 
-    // Single-Page PDF Export Logic
-    exportPdfBtn.addEventListener("click", () => {
+    exportPdfBtn.addEventListener("click", async () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         const margin = 8;
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // Header Text
-        doc.setFontSize(10);
+        // Configure Century Gothic system font fallback across jsPDF
         doc.setFont("helvetica", "bold");
+
+        doc.setFontSize(10);
         doc.text("FORECOURT WORKS LIMITED", margin, 10);
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "normal");
         doc.text("Ramco Court, Gate 3B, Bellevue, Nairobi | Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke", margin, 14);
 
-        // Header Logo
+        // Force logo rendering via off-screen Canvas draw to bypass image-loading latency
         const logoImg = document.getElementById("companyLogo");
+        let logoDataUrl = "";
+
         try {
-            doc.addImage(logoImg, 'PNG', pageWidth - margin - 30, 6, 30, 11);
-        } catch (e) {
-            console.warn("Logo load skipped.");
+            const canvasImg = document.createElement("canvas");
+            canvasImg.width = logoImg.naturalWidth || 300;
+            canvasImg.height = logoImg.naturalHeight || 60;
+            const ctxImg = canvasImg.getContext("2d");
+            ctxImg.drawImage(logoImg, 0, 0);
+            logoDataUrl = canvasImg.toDataURL("image/png");
+        } catch (err) {
+            logoDataUrl = logoImg.src;
+        }
+
+        if (logoDataUrl) {
+            try {
+                doc.addImage(logoDataUrl, 'PNG', pageWidth - margin - 50, 5, 50, 9);
+            } catch (e) {
+                console.error("Logo force-render failed: ", e);
+            }
         }
 
         doc.setLineWidth(0.4);
         doc.line(margin, 17, pageWidth - margin, 17);
 
-        // Part 1
         const selectedProducts = Array.from(document.querySelectorAll('.prod-check:checked')).map(cb => cb.value).join(", ") || "None";
         const part1Data = [
             ["Client Name", document.getElementById("clientName").value, "Certificate No.", document.getElementById("certNo").value],
-            ["Equipment", document.getElementById("equipDesc").value, "Serial Number", document.getElementById("serialNo").value],
-            ["Status / Prover", `${getSelectedDispenserStatus()} (${getSelectedProverSize()}L Can)`, "Inspection Date", document.getElementById("inspectDate").value],
+            ["Equipment", document.getElementById("equipDesc").value, "Equipment ID", document.getElementById("equipId").value],
+            ["Serial Number", document.getElementById("serialNo").value, "Prover Can Size", `${getSelectedProverSize()}L Can`],
+            ["Dispenser Status", getSelectedDispenserStatus(), "Inspection Date", document.getElementById("inspectDate").value],
             ["Products", selectedProducts, "Location", "Site Forecourt"]
         ];
 
@@ -199,12 +211,11 @@ document.addEventListener("DOMContentLoaded", () => {
             startY: 19,
             body: part1Data,
             theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1 },
+            styles: { font: "helvetica", fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Part 2
         const calRows = document.querySelectorAll("#calTableBody tr");
         const part2Data = [];
         calRows.forEach((row, idx) => {
@@ -225,8 +236,8 @@ document.addEventListener("DOMContentLoaded", () => {
             head: [["NOZZLE#", "Indicated (L)", "Prover (L)", "Error (%)", "Weights & Measures Verdict", "Volumetric / Financial Analysis"]],
             body: part2Data,
             theme: 'striped',
-            headStyles: { fillColor: [40, 40, 40], fontSize: 7 },
-            styles: { fontSize: 6.5, cellPadding: 1 },
+            headStyles: { fillColor: [40, 40, 40], fontSize: 7, fontStyle: 'bold' },
+            styles: { font: "helvetica", fontSize: 6.5, cellPadding: 1 },
             columnStyles: {
                 0: { cellWidth: 14 },
                 1: { cellWidth: 20 },
@@ -238,7 +249,6 @@ document.addEventListener("DOMContentLoaded", () => {
             margin: { left: margin, right: margin }
         });
 
-        // Part 3 & 4
         const part3_4_Data = [
             ["Amb Temp (°C)", document.getElementById("ambTemp").value, "Prover ID", document.getElementById("proverId").value],
             ["Prod Temp (°C)", document.getElementById("prodTemp").value, "Traceability Cert", document.getElementById("traceCert").value],
@@ -249,12 +259,11 @@ document.addEventListener("DOMContentLoaded", () => {
             startY: doc.lastAutoTable.finalY + 3,
             body: part3_4_Data,
             theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1 },
+            styles: { font: "helvetica", fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Part 5
         const part5Data = [
             ["Verdict", document.getElementById("finalVerdict").value, "Notes", document.getElementById("techNotes").value],
             ["Inspector", document.getElementById("inspectorName").value, "Client Rep", document.getElementById("clientRep").value]
@@ -264,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
             startY: doc.lastAutoTable.finalY + 3,
             body: part5Data,
             theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1 },
+            styles: { font: "helvetica", fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
@@ -278,7 +287,6 @@ document.addEventListener("DOMContentLoaded", () => {
             doc.addImage(signatures.client, 'PNG', pageWidth - margin - 40, currentY, 22, 8);
         }
 
-        // Footer
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "bolditalic");
         doc.text("Forecourt Works, Engineering Reliability into every forecourt", pageWidth / 2, 287, { align: "center" });
