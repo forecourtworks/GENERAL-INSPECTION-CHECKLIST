@@ -2,40 +2,62 @@ document.addEventListener("DOMContentLoaded", () => {
     const tableBody = document.getElementById("calTableBody");
     const addRowBtn = document.getElementById("addRowBtn");
     const exportPdfBtn = document.getElementById("exportPdfBtn");
-    const avgErrorCell = document.getElementById("avgErrorCell");
 
     let currentSigTarget = null;
     let signatures = { inspector: null, client: null };
 
-    // Canvas Setup
     const sigModal = new bootstrap.Modal(document.getElementById("signatureModal"));
     const canvas = document.getElementById("sigCanvas");
     const ctx = canvas.getContext("2d");
     let isDrawing = false;
+
+    // Default Prover Can size
+    function getSelectedProverSize() {
+        const checked = document.querySelector('.prover-radio:checked');
+        return checked ? parseFloat(checked.value) : 20.0;
+    }
+
+    function getSelectedDispenserStatus() {
+        const checked = document.querySelector('.status-radio:checked');
+        return checked ? checked.value : "New";
+    }
 
     // Initialize 3 default Nozzle rows
     for (let i = 1; i <= 3; i++) addRow(i);
 
     addRowBtn.addEventListener("click", () => addRow(tableBody.children.length + 1));
 
+    // Global listeners for setting changes
+    document.querySelectorAll('.prover-radio, .status-radio').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const proverVol = getSelectedProverSize();
+            document.querySelectorAll('.std-input').forEach(input => {
+                input.value = proverVol.toFixed(2);
+            });
+            recalculateAllRows();
+        });
+    });
+
     function addRow(nozzleNumber) {
+        const proverVol = getSelectedProverSize();
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td class="text-center fw-bold">${nozzleNumber}</td>
-            <td><input type="text" class="table-input std-input" placeholder="20.00" value="20.00"></td>
-            <td><input type="text" class="table-input ind-input" placeholder="0.00"></td>
+            <td><input type="text" class="table-input ind-input" placeholder="${proverVol.toFixed(2)}" value="${proverVol.toFixed(2)}"></td>
+            <td><input type="text" class="table-input std-input" placeholder="${proverVol.toFixed(2)}" value="${proverVol.toFixed(2)}"></td>
             <td><input type="text" class="table-input err-input" readonly placeholder="0.00%"></td>
-            <td><input type="text" class="table-input remark-input" placeholder="Pass / Fail"></td>
+            <td class="verdict-cell small"></td>
+            <td class="analysis-cell small"></td>
         `;
         tableBody.appendChild(tr);
         attachRowEvents(tr);
     }
 
     function attachRowEvents(row) {
-        const stdInput = row.querySelector(".std-input");
         const indInput = row.querySelector(".ind-input");
-        
-        [stdInput, indInput].forEach(input => {
+        const stdInput = row.querySelector(".std-input");
+
+        [indInput, stdInput].forEach(input => {
             input.addEventListener("blur", (e) => formatAndCalculate(row, e.target));
             input.addEventListener("keyup", (e) => {
                 if (e.key === "Enter") formatAndCalculate(row, e.target);
@@ -48,39 +70,76 @@ document.addEventListener("DOMContentLoaded", () => {
         if (val !== "" && !isNaN(val)) {
             activeInput.value = parseFloat(val).toFixed(2);
         }
-        calculateRowError(row);
-        calculateOverallAverage();
+        calculateRowData(row);
     }
 
-    function calculateRowError(row) {
-        const stdVal = parseFloat(row.querySelector(".std-input").value);
-        const indVal = parseFloat(row.querySelector(".ind-input").value);
-        const errInput = row.querySelector(".err-input");
+    function recalculateAllRows() {
+        document.querySelectorAll("#calTableBody tr").forEach(row => calculateRowData(row));
+    }
 
-        if (!isNaN(stdVal) && !isNaN(indVal) && stdVal !== 0) {
-            const errorPercent = ((indVal - stdVal) / stdVal) * 100;
-            errInput.value = errorPercent.toFixed(2) + "%";
-        } else {
+    function calculateRowData(row) {
+        const indVal = parseFloat(row.querySelector(".ind-input").value);
+        const stdVal = parseFloat(row.querySelector(".std-input").value);
+        const errInput = row.querySelector(".err-input");
+        const verdictCell = row.querySelector(".verdict-cell");
+        const analysisCell = row.querySelector(".analysis-cell");
+
+        if (isNaN(indVal) || isNaN(stdVal) || stdVal === 0) {
             errInput.value = "N/A";
+            verdictCell.textContent = "";
+            analysisCell.textContent = "";
+            return;
+        }
+
+        // Percentage Error Calculation
+        const obsError = ((indVal - stdVal) / stdVal) * 100;
+        const obsErrorFormatted = (obsError >= 0 ? "+" : "") + obsError.toFixed(2) + "%";
+        errInput.value = obsErrorFormatted;
+
+        const status = getSelectedDispenserStatus();
+        
+        // Department of Weights & Measures MPE statutory limits
+        let upperMpe = (status === "New") ? 0.25 : 0.50;
+        let lowerMpe = (status === "New") ? -0.125 : -0.25;
+
+        let isPassed = obsError >= lowerMpe && obsError <= upperMpe;
+        
+        // Compute Factor relative to legal MPE limit
+        let factor = 0;
+        if (obsError > upperMpe) {
+            factor = obsError / upperMpe;
+        } else if (obsError < lowerMpe) {
+            factor = obsError / lowerMpe;
+        }
+
+        if (isPassed) {
+            verdictCell.className = "verdict-cell small verdict-pass";
+            verdictCell.innerHTML = `PASS (${obsErrorFormatted})<br><span class="text-muted" style="font-size:0.7rem;">Within legal ${status} MPE [${lowerMpe}% to +${upperMpe}%]</span>`;
+        } else {
+            verdictCell.className = "verdict-cell small verdict-fail";
+            verdictCell.innerHTML = `FAIL - Exceeds ${status} limit by factor of ${factor.toFixed(1)}<br><span style="font-size:0.7rem;">(Observed: ${obsErrorFormatted} | Legal MPE: ${lowerMpe}% to +${upperMpe}%)</span>`;
+        }
+
+        // Volumetric Financial Analysis
+        const diffVol = indVal - stdVal; // Indicated minus Standard
+        const absDiffVol = Math.abs(diffVol);
+        const mlPerLiter = (absDiffVol / stdVal) * 1000;
+
+        if (Math.abs(diffVol) < 0.001) {
+            analysisCell.className = "analysis-cell small text-success";
+            analysisCell.textContent = "Zero Volumetric Deviation. Meter calibrated perfectly.";
+        } else if (diffVol > 0) {
+            // Dispenser shows MORE than actual measure in prover
+            analysisCell.className = "analysis-cell small text-danger";
+            analysisCell.textContent = `CUSTOMER LOSING / STATION GAINING — Customer pays for ${indVal.toFixed(2)}L but receives ${stdVal.toFixed(2)}L. Meter is over-registering by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L).`;
+        } else {
+            // Dispenser shows LESS than actual measure in prover
+            analysisCell.className = "analysis-cell small text-warning text-dark";
+            analysisCell.textContent = `CUSTOMER GAINING / STATION LOSING — Customer pays for ${indVal.toFixed(2)}L but receives ${stdVal.toFixed(2)}L. Prover indicates dispenser meter is under-registering fuel sold by ${absDiffVol.toFixed(2)}L (${mlPerLiter.toFixed(1)} ml/L), so the site is giving away product.`;
         }
     }
 
-    function calculateOverallAverage() {
-        const errInputs = document.querySelectorAll(".err-input");
-        let totalError = 0, validCount = 0;
-
-        errInputs.forEach(input => {
-            const val = parseFloat(input.value.replace("%", ""));
-            if (!isNaN(val)) {
-                totalError += val;
-                validCount++;
-            }
-        });
-
-        avgErrorCell.textContent = validCount > 0 ? (totalError / validCount).toFixed(2) + "%" : "0.00%";
-    }
-
-    // Signature Canvas Logic
+    // Signature Canvas Setup
     window.openSignatureModal = (target) => {
         currentSigTarget = target;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -101,76 +160,85 @@ document.addEventListener("DOMContentLoaded", () => {
         sigModal.hide();
     });
 
-    // 1-PAGE PDF Export Logic
+    // Single-Page PDF Export Logic
     exportPdfBtn.addEventListener("click", () => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-        const margin = 10;
+        const margin = 8;
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // Header Top Left Details
-        doc.setFontSize(11);
+        // Header Text
+        doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
-        doc.text("FORECOURT WORKS LIMITED", margin, 12);
-        doc.setFontSize(8);
+        doc.text("FORECOURT WORKS LIMITED", margin, 10);
+        doc.setFontSize(7.5);
         doc.setFont("helvetica", "normal");
-        doc.text("Ramco Court, Gate 3B, Bellevue, Nairobi", margin, 16);
-        doc.text("Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke", margin, 20);
+        doc.text("Ramco Court, Gate 3B, Bellevue, Nairobi | Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke", margin, 14);
 
-        // Header Top Right Logo
+        // Header Logo
         const logoImg = document.getElementById("companyLogo");
         try {
-            doc.addImage(logoImg, 'PNG', pageWidth - margin - 35, 8, 35, 14);
+            doc.addImage(logoImg, 'PNG', pageWidth - margin - 30, 6, 30, 11);
         } catch (e) {
-            console.warn("Logo skipped or failed to load into PDF.");
+            console.warn("Logo load skipped.");
         }
 
-        doc.setLineWidth(0.5);
-        doc.line(margin, 24, pageWidth - margin, 24);
+        doc.setLineWidth(0.4);
+        doc.line(margin, 17, pageWidth - margin, 17);
 
-        // Part 1: Selected Products
+        // Part 1
         const selectedProducts = Array.from(document.querySelectorAll('.prod-check:checked')).map(cb => cb.value).join(", ") || "None";
         const part1Data = [
             ["Client Name", document.getElementById("clientName").value, "Certificate No.", document.getElementById("certNo").value],
             ["Equipment", document.getElementById("equipDesc").value, "Serial Number", document.getElementById("serialNo").value],
-            ["Inspection Date", document.getElementById("inspectDate").value, "Location", document.getElementById("location").value],
-            ["Manufacturer", document.getElementById("makeModel").value, "Product Type", selectedProducts]
+            ["Status / Prover", `${getSelectedDispenserStatus()} (${getSelectedProverSize()}L Can)`, "Inspection Date", document.getElementById("inspectDate").value],
+            ["Products", selectedProducts, "Location", "Site Forecourt"]
         ];
 
         doc.autoTable({
-            startY: 26,
+            startY: 19,
             body: part1Data,
             theme: 'grid',
-            styles: { fontSize: 7.5, cellPadding: 1.2 },
+            styles: { fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Part 2: Calibration Table
+        // Part 2
         const calRows = document.querySelectorAll("#calTableBody tr");
         const part2Data = [];
         calRows.forEach((row, idx) => {
+            const verdictText = row.querySelector(".verdict-cell").innerText.replace(/\n/g, " ");
+            const analysisText = row.querySelector(".analysis-cell").innerText;
             part2Data.push([
                 idx + 1,
-                row.querySelector(".std-input").value,
                 row.querySelector(".ind-input").value,
+                row.querySelector(".std-input").value,
                 row.querySelector(".err-input").value,
-                row.querySelector(".remark-input").value
+                verdictText,
+                analysisText
             ]);
         });
-        part2Data.push([{ content: "Average Error", colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } }, avgErrorCell.textContent, ""]);
 
         doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 4,
-            head: [["NOZZLE#", "Standard (L)", "Indicated (L)", "Error (%)", "Remarks"]],
+            startY: doc.lastAutoTable.finalY + 3,
+            head: [["NOZZLE#", "Indicated (L)", "Prover (L)", "Error (%)", "Weights & Measures Verdict", "Volumetric / Financial Analysis"]],
             body: part2Data,
             theme: 'striped',
-            headStyles: { fillColor: [50, 50, 50], fontSize: 7.5 },
-            styles: { fontSize: 7.5, cellPadding: 1.2 },
+            headStyles: { fillColor: [40, 40, 40], fontSize: 7 },
+            styles: { fontSize: 6.5, cellPadding: 1 },
+            columnStyles: {
+                0: { cellWidth: 14 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 20 },
+                3: { cellWidth: 18 },
+                4: { cellWidth: 55 },
+                5: { cellWidth: 'auto' }
+            },
             margin: { left: margin, right: margin }
         });
 
-        // Part 3 & 4 (Combined Row)
+        // Part 3 & 4
         const part3_4_Data = [
             ["Amb Temp (°C)", document.getElementById("ambTemp").value, "Prover ID", document.getElementById("proverId").value],
             ["Prod Temp (°C)", document.getElementById("prodTemp").value, "Traceability Cert", document.getElementById("traceCert").value],
@@ -178,43 +246,42 @@ document.addEventListener("DOMContentLoaded", () => {
         ];
 
         doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 4,
+            startY: doc.lastAutoTable.finalY + 3,
             body: part3_4_Data,
             theme: 'grid',
-            styles: { fontSize: 7.5, cellPadding: 1.2 },
+            styles: { fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        // Part 5: Verdict & Sign-Offs
+        // Part 5
         const part5Data = [
             ["Verdict", document.getElementById("finalVerdict").value, "Notes", document.getElementById("techNotes").value],
-            ["Inspector Name", document.getElementById("inspectorName").value, "Client Rep Name", document.getElementById("clientRep").value]
+            ["Inspector", document.getElementById("inspectorName").value, "Client Rep", document.getElementById("clientRep").value]
         ];
 
         doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 4,
+            startY: doc.lastAutoTable.finalY + 3,
             body: part5Data,
             theme: 'grid',
-            styles: { fontSize: 7.5, cellPadding: 1.5 },
+            styles: { fontSize: 7, cellPadding: 1 },
             columnStyles: { 0: { fontStyle: 'bold', fillColor: [245, 245, 245] }, 2: { fontStyle: 'bold', fillColor: [245, 245, 245] } },
             margin: { left: margin, right: margin }
         });
 
-        let currentY = doc.lastAutoTable.finalY + 4;
+        let currentY = doc.lastAutoTable.finalY + 2;
 
-        // Render Digital Signatures onto PDF
         if (signatures.inspector) {
-            doc.addImage(signatures.inspector, 'PNG', margin + 30, currentY, 25, 10);
+            doc.addImage(signatures.inspector, 'PNG', margin + 30, currentY, 22, 8);
         }
         if (signatures.client) {
-            doc.addImage(signatures.client, 'PNG', pageWidth - margin - 45, currentY, 25, 10);
+            doc.addImage(signatures.client, 'PNG', pageWidth - margin - 40, currentY, 22, 8);
         }
 
-        // Footer Note Centered
-        doc.setFontSize(8);
+        // Footer
+        doc.setFontSize(7.5);
         doc.setFont("helvetica", "bolditalic");
-        doc.text("Forecourt Works, Engineering Reliability into every forecourt", pageWidth / 2, 285, { align: "center" });
+        doc.text("Forecourt Works, Engineering Reliability into every forecourt", pageWidth / 2, 287, { align: "center" });
 
         doc.save("Forecourt_Works_Calibration_Certificate.pdf");
     });
