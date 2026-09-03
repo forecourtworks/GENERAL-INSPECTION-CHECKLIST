@@ -6,19 +6,21 @@
     <title>Calibration Certificate - Forecourt Works</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background-color: #f8f9fa; font-family: Arial, sans-serif; font-size: 0.85rem; }
-        .card { margin-bottom: 12px; border: 1px solid #ced4da; }
-        .card-header { font-weight: bold; padding: 4px 10px; font-size: 0.85rem; background-color: #f1f3f5; }
-        .table-input { width: 100%; border: 1px solid #ced4da; border-radius: 3px; padding: 2px 6px; font-size: 0.82rem; }
-        .header-container { background-color: #ffffff; padding: 10px 15px; border-bottom: 2px solid #000; margin-bottom: 15px; }
-        .company-title { font-weight: bold; font-size: 1.1rem; color: #000; }
-        .company-details { font-size: 0.78rem; color: #333; line-height: 1.2; }
-        .footer-note { text-align: center; font-size: 0.75rem; font-style: italic; font-weight: bold; margin-top: 10px; }
-        .signature-preview { height: 35px; max-width: 120px; object-fit: contain; display: none; }
+        body { background-color: #f8f9fa; font-family: Arial, sans-serif; font-size: 0.82rem; }
+        .card { margin-bottom: 10px; border: 1px solid #ced4da; }
+        .card-header { font-weight: bold; padding: 4px 10px; font-size: 0.82rem; background-color: #f1f3f5; }
+        .table-input { width: 100%; border: 1px solid #ced4da; border-radius: 3px; padding: 2px 4px; font-size: 0.80rem; }
+        .header-container { background-color: #ffffff; padding: 8px 12px; border-bottom: 2px solid #000; margin-bottom: 10px; }
+        .company-title { font-weight: bold; font-size: 1.05rem; color: #000; }
+        .company-details { font-size: 0.75rem; color: #333; line-height: 1.15; }
+        .footer-note { text-align: center; font-size: 0.72rem; font-style: italic; font-weight: bold; margin-top: 8px; }
+        .signature-preview { height: 30px; max-width: 100px; object-fit: contain; display: none; }
+        .verdict-pass { color: #198754; font-weight: bold; }
+        .verdict-fail { color: #dc3545; font-weight: bold; }
         canvas { border: 1px dashed #6c757d; background-color: #fff; cursor: crosshair; }
     </style>
 </head>
-<body class="container py-3">
+<body class="container py-2">
 
     <!-- Header Section -->
     <div class="header-container d-flex justify-content-between align-items-center">
@@ -26,12 +28,11 @@
             <div class="company-title">FORECOURT WORKS LIMITED</div>
             <div class="company-details">
                 Ramco Court, Gate 3B, Bellevue, Nairobi<br>
-                Phone: +(254) 729 002 087<br>
-                Email: sales@forecourtworks.co.ke
+                Phone: +(254) 729 002 087 | Email: sales@forecourtworks.co.ke
             </div>
         </div>
         <div class="header-right text-end">
-            <img src="https://forecourtworks.github.io/FORECOURT-SWL-PNG-LOGO-/" id="companyLogo" alt="Forecourt Works Logo" style="max-height: 55px; width: auto;" crossorigin="anonymous">
+            <img src="https://forecourtworks.github.io/FORECOURT-SWL-PNG-LOGO-/" id="companyLogo" alt="Forecourt Works Logo" style="max-height: 48px; width: auto;" crossorigin="anonymous">
             <div class="mt-1">
                 <button id="exportPdfBtn" class="btn btn-sm btn-primary fw-bold">Export PDF (1-Page)</button>
             </div>
@@ -41,31 +42,57 @@
     <form id="calibrationForm">
         <!-- PART 1: General Information & Equipment Details -->
         <div class="card">
-            <div class="card-header">PART 1: General Information & Equipment Details</div>
+            <div class="card-header">PART 1: General Information & Equipment Setup</div>
             <div class="card-body p-2">
                 <table class="table table-sm table-bordered mb-0 align-middle">
                     <tbody>
                         <tr>
                             <th scope="row" class="w-15 bg-light">Client Name</th>
                             <td><input type="text" class="table-input" id="clientName" placeholder="Client Name"></td>
-                            <th scope="row" class="w-15 bg-light">Certificate No.</th>
+                            <th scope="row" class="w-15 bg-light">Cert No.</th>
                             <td><input type="text" class="table-input" id="certNo" placeholder="CAL-2026-001"></td>
                         </tr>
                         <tr>
                             <th scope="row" class="bg-light">Equipment</th>
                             <td><input type="text" class="table-input" id="equipDesc" placeholder="e.g., Fuel Dispensing Unit"></td>
-                            <th scope="row" class="bg-light">Serial Number</th>
+                            <th scope="row" class="bg-light">Serial No.</th>
                             <td><input type="text" class="table-input" id="serialNo" placeholder="Serial No."></td>
+                        </tr>
+                        <tr>
+                            <th scope="row" class="bg-light">Dispenser Status</th>
+                            <td>
+                                <div class="d-flex align-items-center gap-3 px-1">
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusNew" value="New" checked>
+                                        <label class="form-check-label small" for="statusNew">New (1st Verification)</label>
+                                    </div>
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input status-radio" type="radio" name="dispStatus" id="statusInService" value="In-Service">
+                                        <label class="form-check-label small" for="statusInService">In-Service (Reverification)</label>
+                                    </div>
+                                </div>
+                            </td>
+                            <th scope="row" class="bg-light">Prover Can Size</th>
+                            <td>
+                                <div class="d-flex align-items-center gap-3 px-1">
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input prover-radio" type="radio" name="proverSize" id="prover5L" value="5">
+                                        <label class="form-check-label small" for="prover5L">5L</label>
+                                    </div>
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input prover-radio" type="radio" name="proverSize" id="prover10L" value="10">
+                                        <label class="form-check-label small" for="prover10L">10L</label>
+                                    </div>
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input prover-radio" type="radio" name="proverSize" id="prover20L" value="20" checked>
+                                        <label class="form-check-label small" for="prover20L">20L</label>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                         <tr>
                             <th scope="row" class="bg-light">Inspection Date</th>
                             <td><input type="date" class="table-input" id="inspectDate"></td>
-                            <th scope="row" class="bg-light">Location</th>
-                            <td><input type="text" class="table-input" id="location" placeholder="Site Location"></td>
-                        </tr>
-                        <tr>
-                            <th scope="row" class="bg-light">Manufacturer</th>
-                            <td><input type="text" class="table-input" id="makeModel" placeholder="e.g., Gilbarco / Wayne"></td>
                             <th scope="row" class="bg-light">Product Type</th>
                             <td>
                                 <div class="d-flex justify-content-between align-items-center px-1">
@@ -84,28 +111,22 @@
         <!-- PART 2: Calibration Data Input -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>PART 2: Calibration Data & Accuracy Measurements</span>
+                <span>PART 2: Nozzle Calibration & Verification Data</span>
                 <button type="button" class="btn btn-xs btn-outline-secondary py-0" id="addRowBtn" style="font-size: 0.75rem;">+ Add Nozzle</button>
             </div>
             <div class="card-body p-2">
                 <table class="table table-sm table-bordered align-middle mb-1" id="calibrationTable">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 10%;">NOZZLE#</th>
-                            <th style="width: 22.5%;">Standard (L)</th>
-                            <th style="width: 22.5%;">Indicated (L)</th>
-                            <th style="width: 20%;">Error (%)</th>
-                            <th style="width: 25%;">Remarks</th>
+                            <th style="width: 8%;">NOZZLE#</th>
+                            <th style="width: 18%;">Dispenser Register<br><small class="text-muted">(Indicated Reading - L)</small></th>
+                            <th style="width: 18%;">Prover Can Standard<br><small class="text-muted">(Actual Measure - L)</small></th>
+                            <th style="width: 12%;">Obs. Error (%)</th>
+                            <th style="width: 22%;">Department of Weights & Measures Verdict</th>
+                            <th style="width: 22%;">Volumetric Analysis & Financial Impact</th>
                         </tr>
                     </thead>
                     <tbody id="calTableBody"></tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <td colspan="3" class="text-end fw-bold">Average Error:</td>
-                            <td id="avgErrorCell" class="fw-bold">0.00%</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
         </div>
@@ -114,21 +135,21 @@
         <div class="row g-2">
             <div class="col-md-6">
                 <div class="card h-100">
-                    <div class="card-header">PART 3: Environmental Checks</div>
+                    <div class="card-header">PART 3: Environmental Conditions</div>
                     <div class="card-body p-2">
                         <table class="table table-sm table-bordered mb-0 align-middle">
                             <tbody>
                                 <tr>
                                     <th scope="row" class="bg-light">Amb Temp (°C)</th>
-                                    <td><input type="text" class="table-input env-input" id="ambTemp" placeholder="25.00"></td>
+                                    <td><input type="text" class="table-input" id="ambTemp" placeholder="25.00"></td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="bg-light">Prod Temp (°C)</th>
-                                    <td><input type="text" class="table-input env-input" id="prodTemp" placeholder="23.50"></td>
+                                    <td><input type="text" class="table-input" id="prodTemp" placeholder="23.50"></td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="bg-light">Density (kg/m³)</th>
-                                    <td><input type="text" class="table-input env-input" id="density" placeholder="745.00"></td>
+                                    <td><input type="text" class="table-input" id="density" placeholder="745.00"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -137,13 +158,13 @@
             </div>
             <div class="col-md-6">
                 <div class="card h-100">
-                    <div class="card-header">PART 4: Traceability & Seals</div>
+                    <div class="card-header">PART 4: Traceability & Seal Register</div>
                     <div class="card-body p-2">
                         <table class="table table-sm table-bordered mb-0 align-middle">
                             <tbody>
                                 <tr>
                                     <th scope="row" class="bg-light">Prover ID</th>
-                                    <td><input type="text" class="table-input" id="proverId" placeholder="20L Standard"></td>
+                                    <td><input type="text" class="table-input" id="proverId" placeholder="FWL-PROVER-20L"></td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="bg-light">Cert No.</th>
@@ -162,19 +183,19 @@
 
         <!-- PART 5: Sign-Offs & Digital Signatures -->
         <div class="card mt-2">
-            <div class="card-header">PART 5: Final Verdict & Sign-Offs</div>
+            <div class="card-header">PART 5: Final Authorization & Sign-Offs</div>
             <div class="card-body p-2">
                 <div class="row g-2 mb-2">
                     <div class="col-md-4">
-                        <label class="form-label fw-bold mb-0">Verdict</label>
+                        <label class="form-label fw-bold mb-0">Overall Compliance Status</label>
                         <select class="form-select form-select-sm" id="finalVerdict">
-                            <option value="PASSED - Certified for Use">PASSED - Certified for Use</option>
-                            <option value="FAILED - Out of Tolerance">FAILED - Out of Tolerance</option>
+                            <option value="PASSED - Certified for Legal Metrology Trade">PASSED - Certified for Legal Metrology Trade</option>
+                            <option value="FAILED - Non-Compliant / Rejected">FAILED - Non-Compliant / Rejected</option>
                         </select>
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label fw-bold mb-0">Inspector Notes</label>
-                        <input type="text" class="table-input" id="techNotes" placeholder="Operational notes...">
+                        <label class="form-label fw-bold mb-0">Inspector General Notes</label>
+                        <input type="text" class="table-input" id="techNotes" placeholder="Operational notes or calibration seal details...">
                     </div>
                 </div>
                 <table class="table table-sm table-bordered mb-0 align-middle">
@@ -203,7 +224,6 @@
         </div>
     </form>
 
-    <!-- Footer Note -->
     <div class="footer-note">
         Forecourt Works, Engineering Reliability into every forecourt
     </div>
